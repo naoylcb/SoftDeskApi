@@ -20,13 +20,10 @@ from api import views
 
 router = routers.DefaultRouter()
 router.register(r'projects', views.ProjectViewSet)
-router.register(r'contributors', views.ContributorViewSet)
 router.register(r'issues', views.IssueViewSet)
 router.register(r'comments', views.CommentViewSet)
 router.register(r'users', views.UserViewSet)
 
-# Wire up our API using automatic URL routing.
-# Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
     path('admin/', admin.site.urls),

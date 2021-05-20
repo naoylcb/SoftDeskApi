@@ -7,7 +7,7 @@ from .models import Project, Contributor, Issue, Comment
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['url', 'username', 'groups']
+        fields = ['url', 'username']
 
 
 class ProjectSerializer(serializers.HyperlinkedModelSerializer):
