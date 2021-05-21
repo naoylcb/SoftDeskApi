@@ -21,17 +21,16 @@ class Project(models.Model):
 
 
 class Contributor(models.Model):
-    CONTRIBUTOR = 'Contributor'
-    AUTHOR = 'Author'
+    CONTRIBUTOR = 'Contributeur'
+    AUTHOR = 'Responsable'
     ROLES_LIST = [
-        (CONTRIBUTOR, 'Contributeur'),
-        (AUTHOR, 'Responsable')
+        (CONTRIBUTOR, CONTRIBUTOR),
+        (AUTHOR, AUTHOR)
     ]
 
     user_id = models.ForeignKey(to=settings.AUTH_USER_MODEL,
                                 on_delete=models.CASCADE)
     project_id = models.ForeignKey(to=Project, on_delete=models.CASCADE)
-    permission = models.CharField(max_length=128)
     role = models.CharField(max_length=128, choices=ROLES_LIST)
 
 
