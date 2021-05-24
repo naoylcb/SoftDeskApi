@@ -74,7 +74,7 @@ class Issue(models.Model):
     assignee_user_id = models.ForeignKey(to=settings.AUTH_USER_MODEL,
                                          on_delete=models.CASCADE,
                                          related_name='assigned_to')
-    created_time = models.DateTimeField(auto_now_add=True)
+    created_time = models.DateTimeField(auto_now_add=True, editable=False)
 
 
 class Comment(models.Model):
@@ -83,4 +83,4 @@ class Comment(models.Model):
     author_user_id = models.ForeignKey(to=settings.AUTH_USER_MODEL,
                                        on_delete=models.CASCADE)
     issue_id = models.ForeignKey(to=Issue, on_delete=models.CASCADE)
-    created_time = models.DateTimeField(auto_now_add=True)
+    created_time = models.DateTimeField(auto_now_add=True, editable=False)

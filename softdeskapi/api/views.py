@@ -1,25 +1,35 @@
-from django.contrib.auth.models import User
-
-from rest_framework import viewsets
-from rest_framework import permissions
-from rest_framework.decorators import action, api_view
-from rest_framework.generics import get_object_or_404
+from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.generics import get_object_or_404
 from rest_framework.reverse import reverse
 
 from .models import Project, Contributor, Issue, Comment
-from .serializers import ProjectSerializer, ContributorSerializer
-from .serializers import IssueSerializer, CommentSerializer
-from .serializers import UserSerializer
+from .serializers import (
+    ProjectSerializer,
+    ContributorSerializer,
+    IssueSerializer,
+    CommentSerializer,
+    UserSerializer,
+)
 
 
-@api_view(['GET'])
-def api_root(request, format=None):
-    return Response({
-        'projects': reverse('api:projects', request=request, format=format)
-    })
+class ApiRootView(APIView):
+
+    def get(self, request, format=None):
+        return Response({
+            'projects': reverse('api:projects', request=request, format=format)
+        })
+
+
+class RegistrationView(APIView):
+
+    def post(self, request, format=None):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserView(APIView):
@@ -32,11 +42,15 @@ class UserView(APIView):
         return Response(serializer.data)
 
     def post(self, request, p_id, format=None):
+        request.data['project_id'] = p_id
         serializer = ContributorSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserDetailView(APIView):
 
     def delete(self, request, p_id, pk, format=None):
         contributor = get_object_or_404(Contributor, user_id=pk,
@@ -59,11 +73,21 @@ class IssueView(APIView):
         request.data['assignee_user_id'] = request.data.get(
             'assignee_user_id', request.user.id)
 
+        # Verify that assignee_user_id is a project contributor.
+        get_object_or_404(
+            Contributor,
+            user_id=request.data['assignee_user_id'],
+            project_id=p_id
+        )
+
         serializer = IssueSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class IssueDetailView(APIView):
 
     def put(self, request, p_id, pk, format=None):
         issue = get_object_or_404(Issue, pk=pk, project_id=p_id)
@@ -85,16 +109,11 @@ class IssueView(APIView):
 
 class CommentView(APIView):
 
-    def get(self, request, p_id, i_id, pk=None, format=None):
+    def get(self, request, p_id, i_id, format=None):
         issue = get_object_or_404(Issue, pk=i_id, project_id=p_id)
-        if pk is None:
-            comments = Comment.objects.filter(issue_id=issue)
-            serializer = CommentSerializer(comments, many=True)
-            return Response(serializer.data)
-        else:
-            comment = get_object_or_404(Comment, pk=pk, issue_id=issue)
-            serializer = CommentSerializer(comment)
-            return Response(serializer.data)
+        comments = Comment.objects.filter(issue_id=issue)
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data)
 
     def post(self, request, p_id, i_id, format=None):
         issue = get_object_or_404(Issue, pk=i_id, project_id=p_id)
@@ -106,6 +125,15 @@ class CommentView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CommentDetailView(APIView):
+
+    def get(self, request, p_id, i_id, pk, format=None):
+        issue = get_object_or_404(Issue, pk=i_id, project_id=p_id)
+        comment = get_object_or_404(Comment, pk=pk, issue_id=issue)
+        serializer = CommentSerializer(comment)
+        return Response(serializer.data)
 
     def put(self, request, p_id, i_id, pk, format=None):
         issue = get_object_or_404(Issue, pk=i_id, project_id=p_id)
@@ -129,7 +157,7 @@ class CommentView(APIView):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def list(self, request):
         projects_list = []
