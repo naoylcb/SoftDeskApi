@@ -6,7 +6,10 @@ from .utils import extract_ids, is_contributor
 
 
 class CanReadOrEditProject(permissions.BasePermission):
-
+    """
+    Permission to only allow contributors to access projects.
+    Permission to only allow authors of a project to edit it.
+    """
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return is_contributor(request.user, obj)
@@ -15,7 +18,10 @@ class CanReadOrEditProject(permissions.BasePermission):
 
 
 class CanReadOrEditUser(permissions.BasePermission):
-
+    """
+    Permission to only allow contributors to see project's contributors.
+    Permission to only allow project's authors to add or remove a contributor.
+    """
     def has_permission(self, request, view):
         # Extract project id from the url.
         ids = extract_ids(request.path)
@@ -28,7 +34,10 @@ class CanReadOrEditUser(permissions.BasePermission):
 
 
 class CanReadOrEditIssue(permissions.BasePermission):
-
+    """
+    Permission to only allow contributors to access project's issues.
+    Permission to only allow issue's authors to edit it.
+    """
     def has_permission(self, request, view):
         # Extract ids from the url.
         ids = extract_ids(request.path)
@@ -46,7 +55,10 @@ class CanReadOrEditIssue(permissions.BasePermission):
 
 
 class CanReadOrEditComment(permissions.BasePermission):
-
+    """
+    Permission to only allow contributors to access issue's comments.
+    Permission to only allow comment's authors to edit it.
+    """
     def has_permission(self, request, view):
         # Extract ids from the url.
         ids = extract_ids(request.path)
