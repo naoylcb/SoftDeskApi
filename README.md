@@ -27,3 +27,5 @@ You can log in with this accounts to test the api:
 - yoan | test-test1
 - luc | test/test2
 - admin | admin
+
+SoftDesk API documentation : (https://documenter.getpostman.com/view/15948869/TzXwEdtr)
