@@ -44,12 +44,8 @@ class CanReadOrEditIssue(permissions.BasePermission):
         project = get_object_or_404(Project, project_id=ids[0])
 
         if request.method == 'PUT' or request.method == 'DELETE':
-            try:
-                Issue.objects.get(id=ids[1], author_user_id=request.user,
-                                  project_id=project)
-            except Issue.DoesNotExist:
-                return False
-            return True
+            issue = get_object_or_404(Issue, id=ids[1], project_id=project)
+            return issue.author_user_id == request.user
 
         return is_contributor(request.user, project)
 
@@ -64,13 +60,9 @@ class CanReadOrEditComment(permissions.BasePermission):
         ids = extract_ids(request.path)
 
         if request.method == 'PUT' or request.method == 'DELETE':
-            try:
-                Comment.objects.get(comment_id=ids[2],
-                                    author_user_id=request.user,
-                                    issue_id=ids[1])
-            except Comment.DoesNotExist:
-                return False
-            return True
+            comment = get_object_or_404(Comment, comment_id=ids[2],
+                                        issue_id=ids[1])
+            return comment.author_user_id == request.user
 
         project = get_object_or_404(Project, project_id=ids[0])
         return is_contributor(request.user, project)
