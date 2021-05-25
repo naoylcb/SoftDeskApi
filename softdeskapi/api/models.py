@@ -18,20 +18,19 @@ class Project(models.Model):
     title = models.CharField(max_length=128)
     description = models.CharField(max_length=1024)
     type = models.CharField(max_length=128, choices=TYPES_LIST)
+    author_user_id = models.ForeignKey(to=settings.AUTH_USER_MODEL,
+                                       on_delete=models.CASCADE)
 
 
 class Contributor(models.Model):
-    CONTRIBUTOR = 'Contributeur'
-    AUTHOR = 'Responsable'
-    ROLES_LIST = [
-        (CONTRIBUTOR, CONTRIBUTOR),
-        (AUTHOR, AUTHOR)
-    ]
 
     user_id = models.ForeignKey(to=settings.AUTH_USER_MODEL,
                                 on_delete=models.CASCADE)
     project_id = models.ForeignKey(to=Project, on_delete=models.CASCADE)
-    role = models.CharField(max_length=128, choices=ROLES_LIST)
+    role = models.CharField(max_length=128)
+
+    class Meta:
+        unique_together = ('user_id', 'project_id')
 
 
 class Issue(models.Model):
