@@ -1,6 +1,6 @@
 # SoftDesk API
 
-The SoftDesk API allows you to programmatically access data stored in SoftDesk database.
+The SoftDesk API allows you to access data stored in SoftDesk database.
 
 ## Installation and Execution
 
