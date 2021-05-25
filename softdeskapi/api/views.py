@@ -19,6 +19,7 @@ from .permissions import (
     CanReadOrEditIssue,
     CanReadOrEditComment
 )
+from .utils import serialize
 
 
 class ApiRootView(APIView):
@@ -31,16 +32,13 @@ class ApiRootView(APIView):
 
 
 class RegistrationView(APIView):
-
+    """View for user registration."""
     def post(self, request, format=None):
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return serialize(UserSerializer, request.data)
 
 
 class UserView(APIView):
+    """View for get project's contributors or add a contributor."""
     permission_classes = [IsAuthenticated and CanReadOrEditUser]
 
     def get(self, request, p_id, format=None):
@@ -52,14 +50,11 @@ class UserView(APIView):
 
     def post(self, request, p_id, format=None):
         request.data['project_id'] = p_id
-        serializer = ContributorSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return serialize(ContributorSerializer, request.data)
 
 
 class UserDetailView(APIView):
+    """View for remove a project's contributor."""
     permission_classes = [IsAuthenticated and CanReadOrEditUser]
 
     def delete(self, request, p_id, pk, format=None):
@@ -70,6 +65,7 @@ class UserDetailView(APIView):
 
 
 class IssueView(APIView):
+    """View for get project's issues or add a issue."""
     permission_classes = [IsAuthenticated and CanReadOrEditIssue]
 
     def get(self, request, p_id, format=None):
@@ -85,20 +81,17 @@ class IssueView(APIView):
             'assignee_user_id', request.user.id)
 
         # Verify that assignee_user_id is a project contributor.
-        get_object_or_404(
-            Contributor,
-            user_id=request.data['assignee_user_id'],
-            project_id=p_id
-        )
+        try:
+            Contributor.objects.get(user_id=request.data['assignee_user_id'],
+                                    project_id=p_id)
+        except Contributor.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = IssueSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return serialize(IssueSerializer, request.data)
 
 
 class IssueDetailView(APIView):
+    """View for edit or delete an issue."""
     permission_classes = [IsAuthenticated and CanReadOrEditIssue]
 
     def put(self, request, p_id, pk, format=None):
@@ -107,11 +100,7 @@ class IssueDetailView(APIView):
         request.data['author_user_id'] = issue.author_user_id.id
         request.data['assignee_user_id'] = issue.assignee_user_id.id
 
-        serializer = IssueSerializer(issue, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return serialize(IssueSerializer, request.data, issue)
 
     def delete(self, request, p_id, pk, format=None):
         issue = get_object_or_404(Issue, pk=pk, project_id=p_id)
@@ -120,6 +109,7 @@ class IssueDetailView(APIView):
 
 
 class CommentView(APIView):
+    """View for get issue's comments or add a comment."""
     permission_classes = [IsAuthenticated and CanReadOrEditComment]
 
     def get(self, request, p_id, i_id, format=None):
@@ -133,42 +123,37 @@ class CommentView(APIView):
         request.data['issue_id'] = issue.id
         request.data['author_user_id'] = request.user.id
 
-        serializer = CommentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return serialize(CommentSerializer, request.data)
 
 
 class CommentDetailView(APIView):
+    """View for get, edit or delete a comment."""
     permission_classes = [IsAuthenticated and CanReadOrEditComment]
 
-    def get(self, request, p_id, i_id, pk, format=None):
+    def get_comment(self, p_id, i_id, pk):
         issue = get_object_or_404(Issue, pk=i_id, project_id=p_id)
-        comment = get_object_or_404(Comment, pk=pk, issue_id=issue)
+        return get_object_or_404(Comment, pk=pk, issue_id=issue)
+
+    def get(self, request, p_id, i_id, pk, format=None):
+        comment = self.get_comment(p_id, i_id, pk)
         serializer = CommentSerializer(comment)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, p_id, i_id, pk, format=None):
-        issue = get_object_or_404(Issue, pk=i_id, project_id=p_id)
-        comment = get_object_or_404(Comment, pk=pk, issue_id=issue)
+        comment = self.get_comment(p_id, i_id, pk)
         request.data['issue_id'] = comment.issue_id.id
         request.data['author_user_id'] = comment.author_user_id.id
 
-        serializer = CommentSerializer(comment, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return serialize(CommentSerializer, request.data, comment)
 
     def delete(self, request, p_id, i_id, pk, format=None):
-        issue = get_object_or_404(Issue, pk=i_id, project_id=p_id)
-        comment = get_object_or_404(Comment, pk=pk, issue_id=issue)
+        comment = self.get_comment(p_id, i_id, pk)
         comment.delete()
         return Response(status=status.HTTP_200_OK)
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
+    """View for list, create, get, edit or delete project."""
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated and CanReadOrEditProject]

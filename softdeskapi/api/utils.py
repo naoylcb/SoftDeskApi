@@ -1,3 +1,6 @@
+from rest_framework.response import Response
+from rest_framework import status
+
 from .models import Contributor
 
 
@@ -17,3 +20,12 @@ def is_contributor(user, project):
     except Contributor.DoesNotExist:
         return False
     return True
+
+
+def serialize(serializer, data, obj=None):
+    """Serialize in the database."""
+    serializer = serializer(obj, data=data) if obj else serializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

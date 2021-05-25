@@ -32,12 +32,11 @@ class CanReadOrEditIssue(permissions.BasePermission):
     def has_permission(self, request, view):
         # Extract ids from the url.
         ids = extract_ids(request.path)
-        issue_id = ids[1]
         project = get_object_or_404(Project, project_id=ids[0])
 
         if request.method == 'PUT' or request.method == 'DELETE':
             try:
-                Issue.objects.get(id=issue_id, author_user_id=request.user,
+                Issue.objects.get(id=ids[1], author_user_id=request.user,
                                   project_id=project)
             except Issue.DoesNotExist:
                 return False
@@ -51,14 +50,12 @@ class CanReadOrEditComment(permissions.BasePermission):
     def has_permission(self, request, view):
         # Extract ids from the url.
         ids = extract_ids(request.path)
-        comment_id = ids[2]
-        issue_id = ids[1]
 
         if request.method == 'PUT' or request.method == 'DELETE':
             try:
-                Comment.objects.get(comment_id=comment_id,
+                Comment.objects.get(comment_id=ids[2],
                                     author_user_id=request.user,
-                                    issue_id=issue_id)
+                                    issue_id=ids[1])
             except Comment.DoesNotExist:
                 return False
             return True
