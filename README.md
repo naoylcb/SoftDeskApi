@@ -1,3 +1,6 @@
+*(Project realized during my training)*  
+*(The goal being to set up an API)*
+
 # SoftDesk API
 
 The SoftDesk API allows you to access data stored in SoftDesk database.
